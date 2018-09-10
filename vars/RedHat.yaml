@@ -1,0 +1,7 @@
+package_required:
+  - epel-release
+  - git
+  - sudo
+  - yum-utils
+
+group_sudo: wheel

@@ -1,0 +1,80 @@
+---
+# tasks file for devstack
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yaml"
+
+- name: install package
+  become: yes
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ package_required }}"
+
+- name: Disable firewalld
+  become: yes
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+  when: ansible_os_family == "RedHat"
+  with_items:
+    - NetworkManager
+    - firewalld
+
+- name: Create sudoer file
+  become: yes
+  file:
+    path: "/etc/sudoers.d/{{ user }}"
+    state: touch
+
+- name: Create the system groups
+  become: yes
+  group:
+    name: "{{ user }}"
+    state: "present"
+    system: "yes"
+
+- name: Add the user "{{ user }}"
+  become: yes
+  user:
+    name: "{{ user }}"
+    state: present
+    shell: "/bin/bash"
+    groups: "{{ user }}"
+    createhome: "yes"
+    home: "/home/{{ user }}"
+
+- name: Configure sudo for user
+  become: yes
+  lineinfile:
+    create: yes
+    state: present
+    path: "/etc/sudoers.d/{{ user }}"
+    line: "{{ user }} ALL=(ALL) NOPASSWD: ALL"
+
+- name: Clone devstack
+  become: yes
+  become_user: "{{ user }}"
+  git:
+    repo: "https://git.openstack.org/openstack-dev/devstack"
+    dest: "/home/{{ user }}/devstack"
+    update: yes
+    force: yes
+
+- name: Set user as owner
+  become: yes
+  file:
+    owner: "{{ user }}"
+    path: "/home/{{ user }}/devstack/"
+    recurse: yes
+
+- name: Deploy configuration
+  become: yes
+  become_user: "{{ user }}"
+  template:
+    src: local.conf.j2
+    dest: "/home/{{ user }}/devstack/local.conf"
+
+- name: Stack it!
+  become: yes
+  become_user: "{{ user }}"
+  command: "/home/{{ user }}/devstack/stack.sh"

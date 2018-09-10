@@ -1,0 +1,5 @@
+package_required:
+  - git
+  - acl
+
+group_sudo: sudo
