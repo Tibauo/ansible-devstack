@@ -4,5 +4,6 @@ Install devstack:
  - install devstack
 
 
-How to
+How to:
+-------
 ansible-playbook playbook.yml -K -e devstack=true
